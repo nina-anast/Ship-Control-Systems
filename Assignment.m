@@ -261,6 +261,42 @@ clearvars filteredData filteredTime j idx
 % % Save training and testing structs to files
 % save(training_file, 'training');
 % save(testing_file, 'testing');
+%%
+% % Initialize structs to store training and testing data
+% training2 = struct();
+% validating = struct();
+% 
+% for i = 2:numel(fieldnames)
+%     % Define the percentage of data for training and testing
+%     train_percent = 0.8;
+%     val_percent = 1 - train_percent;
+% 
+%     % Get the field name
+%     fieldname = fieldnames{i};
+% 
+%     % Extract the data and corresponding times corresponding to the field name
+%     data2 = testing.(fieldname).data;
+%     times2 = testing.(fieldname).time;
+% 
+%     % Create indices for cross-validation with 80% training and 20% testing
+%     cv = cvpartition(size(data2, 1), 'Holdout', val_percent);
+% 
+%     % Get indices for training and testing sets
+%     train_idx = cv.training;
+%     val_idx = cv.test;
+% 
+%     % Split the data into training and testing sets
+%     training2.(fieldname) = struct('data', data2(train_idx, :), 'time', times2(train_idx));
+%     validating.(fieldname) = struct('data', data2(val_idx, :), 'time', times2(val_idx));
+% end
+% 
+% % Define file paths for saving
+% training_file = 'training2_data.mat';  % Specify the file path for saving training data
+% validating_file = 'validating_data.mat';    % Specify the file path for saving testing data
+% 
+% % Save training and testing structs to files
+% save(training_file, 'training2');
+% save(validating_file, 'validating');
 %% 
 % *To check the separation was ok:*
 
@@ -276,7 +312,7 @@ clearvars filteredData filteredTime j idx
 % 
 % % Plot filtered data
 % subplot(2,1,2); % Plot on the second row, first column
-% plot(testing.(fieldnames{i}).time, testing.(fieldnames{i}).data, ".");
+% plot(training2.(fieldnames{i}).time, training2.(fieldnames{i}).data, ".");
 % title(['Filtered ' fieldnames{i}]);
 % xlabel('Time [s]'); % X-axis label
 % ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Concatenate field name with unit and set it as Y-axis label
@@ -285,10 +321,13 @@ clearvars filteredData filteredTime j idx
 % *Load previewsly made training and testing data:*
 
 % Load the training data from the .mat file
-load('training_data.mat');
+training = load('training2_data.mat');
 
 % Load the testing data from the .mat file
 load('testing_data.mat');
+
+% Load the validating data from the .mat file
+load('validating_data.mat');
 % Functions
 % Για την επιλογή των *thresholds*:
 
