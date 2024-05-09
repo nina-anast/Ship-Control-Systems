@@ -12,3 +12,16 @@
 
 ## ToDos:
  * Τελειώνουμε το φιλτράρισμα των δεδομένων.
+
+## Τα φίλτρα που επιλέξαμε για κάθε δεδομένο:
+
+    2. None
+    3. Interquartile
+    4. Threshold
+    5. Median
+    6. Interquartile
+    7. Interquartile
+    8. Median
+    9. Median
+    10. Threshold 
+    11. Median
