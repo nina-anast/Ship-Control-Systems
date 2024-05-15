@@ -204,24 +204,37 @@ thresholds = readmatrix('thresholds.csv');
 
 for j = 2:numel(fieldnames)
     if j == 2 || j == 4 || j == 10
-        [filteredData, filteredTime, ~] = chauvenetFilter2(Data2024, fieldnames, units, j, thresholds(j));
+        [filteredData, filteredTime] = chauvenetFilter2(Data2024, fieldnames, units, j, thresholds(j));
+        % Calculate removedIndices based on original and filtered data
+        removedIndices = find(~ismember(Data2024.Time, filteredTime));
         data_filt.(fieldnames{j}) = filteredData;
         time_filt.(fieldnames{j}) = filteredTime;
+        removedTimes = unique(Data2024.Time(removedIndices));
+        time_filt.removed.(fieldnames{j}) = removedTimes;
+        % Remove corresponding data
+        Data2024(removedIndices,:) = [];
     elseif j == 3 || j == 6 || j == 7
-        [filteredData,filteredTime] = IQR(Data2024.(fieldnames{j}),Data2024.Time);
+        [filteredData, filteredTime] = IQR(Data2024.(fieldnames{j}), Data2024.Time);
+        % Calculate removedIndices based on original and filtered data
+        removedIndices = find(~ismember(Data2024.Time, filteredTime));
         data_filt.(fieldnames{j}) = filteredData;
         time_filt.(fieldnames{j}) = filteredTime;
+        removedTimes = unique(Data2024.Time(removedIndices));
+        time_filt.removed.(fieldnames{j}) = removedTimes;
+        % Remove corresponding data
+        Data2024(removedIndices,:) = [];
     elseif j == 5 || j == 8 || j == 9 || j == 11
         % Filter the data using rmoutliers
         [data_filt.(fieldnames{j}), idx] = rmoutliers(Data2024.(fieldnames{j}), "median");
-        
         % Retain corresponding times using logical indexing
         time_filt.(fieldnames{j}) = Data2024.Time;
-        time_filt.(fieldnames{j})(idx) = [];
+        removedIndices = idx;
+        removedTimes = unique(Data2024.Time(removedIndices));
+        time_filt.removed.(fieldnames{j}) = removedTimes;
+        % Remove corresponding data
+        Data2024(removedIndices,:) = [];
     end
 end
-
-clearvars filteredData filteredTime j idx
 %%
 % plot_differences(Data2024,fieldnames,units,data_filt,time_filt,4)
 % Χωρισμός Δεδομένων:
@@ -429,52 +442,39 @@ function [FilteredData,Time]=IQR(Data,Time)
 % Calculate length of Vector Input Data 
 n=length(Data);
 
-% Check if the number of Data points is odd or even
+% Check if the number of Data's elements is even or odd
 if mod(n,2)~=0
-    % Number of Data is odd
-    % Divide the Data into two sets. The lower half of the data set saves
-    % the values until the element before the median, while the upper
-    % half saves values starting from the element after the median until
-    % the end. The median is the element that divides the Data set into
-    % two separate sets with the same number of elements.
-
-    % Define lowet half of Data set
-    Data1=Data(1:(n-1)/2);
-    % Calculate length of lower half set
-    n1=length(Data1);
-    % Define upper half set of Data
-    Data3=Data((n-1)/2+2:end);
-    % Calculate length of upper half set
-    n3=length(Data3);
-    
-    % The corresponding sets have an even number of elements
-    % The median of an even set is the mean of the two central elements,
-    % which divide the set in two separate sets with the same number of
-    % elements
-
-    % Calculate the first quartile (the median of the lower half of the data set)
-    Q1=(Data1(n1/2)+Data1(n1/2+1))/2;
-    % Calculate the third quartile (the median of the upper half of the data set)
-    Q3=(Data3(n3/2)+Data3(n3/2+1))/2;
+    % If the number is odd, split the set as explained in the oddlength
+    % function
+    [~,Data1,Data3,n2]=oddlength(Data,n);
+    % Check if the number of the split Datas' elements is even or odd
+    if mod(n2,2)~=0
+        % If the number is odd, calculate the median of each split set,
+        % according to the oddlength function
+        Q1=oddlength(Data1,n2);
+        Q3=oddlength(Data3,n2);
+    else
+        % If the number is even, calculate the median of each split set,
+        % according to the evenlength function
+        Q1=evenlength(Data1,n2);
+        Q3=evenlength(Data3,n2);
+    end
 else
-    % Number of Data is even
-    % Divide the Data into two sets with the same number of elements
-
-    % Define lowet half of Data set
-    Data1=Data(1:n/2);
-    % Calculate length of lower half set
-    n1=length(Data1);
-    % Define upper half set of Data
-    Data3=Data(n/2+1:end);
-    % Calculate length of upper half set
-    n3=length(Data3);
-
-    % The corresponding sets have an even number of elements
-
-    % Calculate the first quartile (the median of the lower half of the data set)
-    Q1=(Data1(n1/2)+Data1(n1/2+1))/2;
-    % Calculate the third quartile (the median of the upper half of the data set)
-    Q3=(Data3(n3/2)+Data3(n3/2+1))/2;
+    % If the number is even, split the set as explained in the evenlength
+    % function
+    [~,Data1,Data3,n2]=evenlength(Data,n);
+    % Check if the number of the split Datas' elements is even or odd
+    if mod(n2,2)~=0
+        % If the number is odd, calculate the median of each split set,
+        % according to the oddlength function
+        Q1=oddlength(Data1,n2);
+        Q3=oddlength(Data3,n2);
+    else
+        % If the number is even, calculate the median of each split set,
+        % according to the evenlength function
+        Q1=evenlength(Data1,n2);
+        Q3=evenlength(Data3,n2);
+    end
 end
 
 % Calculate the value of IQR
@@ -494,6 +494,47 @@ Time(idx)=[];
 % Save the filtered Data
 FilteredData=UData;
 end
+function [Median,LowerSet,UpperSet,n2]=oddlength(Data,n)
+%% This function calculates the Median of the Input Vector Data set, 
+%% divides the set to Upper and Lower halves and calculates the length of the produced sets
+%% when the number of elements is odd
+
+% The median of an odd set is the element that divides the set into two
+% sets with an equal number of elements
+Median=Data((n-1)/2+1);
+
+% The lower half of the set contains elements from the first one to the one before
+% the median of the original set
+LowerSet=Data(1:(n-1)/2);
+
+% The upper half of the set contains elements from the one after
+% the median to the end of the original set
+UpperSet=Data((n-1)/2+2:end);
+
+% Calculate the length of the produced sets
+n2=length(LowerSet);
+end
+function [Median,LowerSet,UpperSet,n2]=evenlength(Data,n)
+%% This function calculates the Median of the Input Vector Data set, 
+%% divides the set to Upper and Lower halves and calculates the length of the produced sets
+%% when the number of elements is even
+
+% The median of an even set is the mean value of the two central elements
+% that split the set to two sets with an equal number of elements
+Median=(Data(n/2)+Data(n/2+1))/2;
+
+% The lower half of the set contains elements from the first one until the
+% former central element of the original set
+LowerSet=Data(1:n/2);
+
+% The upper half of the set contains elements from the first latter central element 
+% until the end of the original set
+UpperSet=Data(n/2+1:end);
+
+% Calculate the length of the produced sets
+n2=length(UpperSet);
+end
+
 %% 
 % *To plot data filtered and unfiltered:*
 
