@@ -195,46 +195,46 @@ clearvars num_cols num_rows num_plots i ans
 %% 
 % *Τελικό φιλτράρισμα:*
 
-% Initialize a struct to store filtered values
-data_filt = struct();
-time_filt = struct();
-
-% Read thresholds from the CSV file
-thresholds = readmatrix('thresholds.csv');
-
-for j = 2:numel(fieldnames)
-    if j == 2 || j == 4 || j == 10
-        [filteredData, filteredTime] = chauvenetFilter2(Data2024, fieldnames, units, j, thresholds(j));
-        % Calculate removedIndices based on original and filtered data
-        removedIndices = find(~ismember(Data2024.Time, filteredTime));
-        data_filt.(fieldnames{j}) = filteredData;
-        time_filt.(fieldnames{j}) = filteredTime;
-        removedTimes = unique(Data2024.Time(removedIndices));
-        time_filt.removed.(fieldnames{j}) = removedTimes;
-        % Remove corresponding data
-        Data2024(removedIndices,:) = [];
-    elseif j == 3 || j == 6 || j == 7
-        [filteredData, filteredTime] = IQR(Data2024.(fieldnames{j}), Data2024.Time);
-        % Calculate removedIndices based on original and filtered data
-        removedIndices = find(~ismember(Data2024.Time, filteredTime));
-        data_filt.(fieldnames{j}) = filteredData;
-        time_filt.(fieldnames{j}) = filteredTime;
-        removedTimes = unique(Data2024.Time(removedIndices));
-        time_filt.removed.(fieldnames{j}) = removedTimes;
-        % Remove corresponding data
-        Data2024(removedIndices,:) = [];
-    elseif j == 5 || j == 8 || j == 9 || j == 11
-        % Filter the data using rmoutliers
-        [data_filt.(fieldnames{j}), idx] = rmoutliers(Data2024.(fieldnames{j}), "median");
-        % Retain corresponding times using logical indexing
-        time_filt.(fieldnames{j}) = Data2024.Time;
-        removedIndices = idx;
-        removedTimes = unique(Data2024.Time(removedIndices));
-        time_filt.removed.(fieldnames{j}) = removedTimes;
-        % Remove corresponding data
-        Data2024(removedIndices,:) = [];
-    end
-end
+% % Initialize a struct to store filtered values
+% data_filt = struct();
+% time_filt = struct();
+% 
+% % Read thresholds from the CSV file
+% thresholds = readmatrix('thresholds.csv');
+% 
+% for j = 2:numel(fieldnames)
+%     if j == 2 || j == 4 || j == 10
+%         [filteredData, filteredTime] = chauvenetFilter2(Data2024, fieldnames, units, j, thresholds(j));
+%         % Calculate removedIndices based on original and filtered data
+%         removedIndices = find(~ismember(Data2024.Time, filteredTime));
+%         data_filt.(fieldnames{j}) = filteredData;
+%         time_filt.(fieldnames{j}) = filteredTime;
+%         removedTimes = unique(Data2024.Time(removedIndices));
+%         time_filt.removed.(fieldnames{j}) = removedTimes;
+%         % Remove corresponding data
+%         Data2024(removedIndices,:) = [];
+%     elseif j == 3 || j == 6 || j == 7
+%         [filteredData, filteredTime] = IQR(Data2024.(fieldnames{j}), Data2024.Time);
+%         % Calculate removedIndices based on original and filtered data
+%         removedIndices = find(~ismember(Data2024.Time, filteredTime));
+%         data_filt.(fieldnames{j}) = filteredData;
+%         time_filt.(fieldnames{j}) = filteredTime;
+%         removedTimes = unique(Data2024.Time(removedIndices));
+%         time_filt.removed.(fieldnames{j}) = removedTimes;
+%         % Remove corresponding data
+%         Data2024(removedIndices,:) = [];
+%     elseif j == 5 || j == 8 || j == 9 || j == 11
+%         % Filter the data using rmoutliers
+%         [data_filt.(fieldnames{j}), idx] = rmoutliers(Data2024.(fieldnames{j}), "median");
+%         % Retain corresponding times using logical indexing
+%         time_filt.(fieldnames{j}) = Data2024.Time;
+%         removedIndices = idx;
+%         removedTimes = unique(Data2024.Time(removedIndices));
+%         time_filt.removed.(fieldnames{j}) = removedTimes;
+%         % Remove corresponding data
+%         Data2024(removedIndices,:) = [];
+%     end
+% end
 %%
 % plot_differences(Data2024,fieldnames,units,data_filt,time_filt,4)
 % Χωρισμός Δεδομένων:
@@ -243,7 +243,7 @@ end
 % training = struct();
 % testing = struct();
 % 
-% for i = 2:numel(fieldnames)
+% for i = 1:numel(fieldnames)
 %     % Define the percentage of data for training and testing
 %     train_percent = 0.8;
 %     test_percent = 1 - train_percent;
@@ -251,20 +251,23 @@ end
 %     % Get the field name
 %     fieldname = fieldnames{i};
 % 
-%     % Extract the data and corresponding times corresponding to the field name
-%     data2 = data_filt.(fieldname);
-%     times2 = time_filt.(fieldname);
+%     % Extract the data directly from Data2024
+%     data2 = Data2024.(fieldname);
+%     times2 = Data2024.Time;
 % 
-%     % Create indices for cross-validation with 80% training and 20% testing
-%     cv = cvpartition(size(data2, 1), 'Holdout', test_percent);
+%     % Sort data indices based on time
+%     [~, sorted_indices] = sort(times2);
 % 
-%     % Get indices for training and testing sets
-%     train_idx = cv.training;
-%     test_idx = cv.test;
+%     % Calculate indices for training and validation sets based on time
+%     num_samples = length(data2);
+%     num_train_samples = round(num_samples * train_percent);
+% 
+%     train_indices = sorted_indices(1:num_train_samples);
+%     val_indices = sorted_indices(num_train_samples+1:end);
 % 
 %     % Split the data into training and testing sets
-%     training.(fieldname) = struct('data', data2(train_idx, :), 'time', times2(train_idx));
-%     testing.(fieldname) = struct('data', data2(test_idx, :), 'time', times2(test_idx));
+%     training.(fieldname) = data2(train_idx, :);
+%     testing.(fieldname) = data2(test_idx, :);
 % end
 % 
 % % Define file paths for saving
@@ -275,11 +278,11 @@ end
 % save(training_file, 'training');
 % save(testing_file, 'testing');
 %%
-% % Initialize structs to store training and testing data
+% % Initialize structs to store training and validating data
 % training2 = struct();
 % validating = struct();
 % 
-% for i = 2:numel(fieldnames)
+% for i = 1:numel(fieldnames)
 %     % Define the percentage of data for training and testing
 %     train_percent = 0.8;
 %     val_percent = 1 - train_percent;
@@ -288,32 +291,36 @@ end
 %     fieldname = fieldnames{i};
 % 
 %     % Extract the data and corresponding times corresponding to the field name
-%     data2 = testing.(fieldname).data;
-%     times2 = testing.(fieldname).time;
+%     data2 = testing.(fieldname);
+%     times2 = testing.Time;
 % 
-%     % Create indices for cross-validation with 80% training and 20% testing
-%     cv = cvpartition(size(data2, 1), 'Holdout', val_percent);
+%     % Sort data indices based on time
+%     [~, sorted_indices] = sort(times2);
 % 
-%     % Get indices for training and testing sets
-%     train_idx = cv.training;
-%     val_idx = cv.test;
+%     % Calculate indices for training and validation sets based on time
+%     num_samples = length(data2);
+%     num_train_samples = round(num_samples * train_percent);
 % 
-%     % Split the data into training and testing sets
-%     training2.(fieldname) = struct('data', data2(train_idx, :), 'time', times2(train_idx));
-%     validating.(fieldname) = struct('data', data2(val_idx, :), 'time', times2(val_idx));
+%     train_indices = sorted_indices(1:num_train_samples);
+%     val_indices = sorted_indices(num_train_samples+1:end);
+% 
+%     % Split the data into training and validating sets
+%     training2.(fieldname) = data2(train_idx, :);
+%     validating.(fieldname) = data2(val_idx, :);
 % end
 % 
 % % Define file paths for saving
 % training_file = 'training2_data.mat';  % Specify the file path for saving training data
 % validating_file = 'validating_data.mat';    % Specify the file path for saving testing data
 % 
-% % Save training and testing structs to files
+% % Save training and validating structs to files
 % save(training_file, 'training2');
 % save(validating_file, 'validating');
+
 %% 
 % *To check the separation was ok:*
 
-% i = 11;
+% i = 4;
 % 
 % % Plot unfiltered data
 % figure;
@@ -325,7 +332,7 @@ end
 % 
 % % Plot filtered data
 % subplot(2,1,2); % Plot on the second row, first column
-% plot(training2.(fieldnames{i}).time, training2.(fieldnames{i}).data, ".");
+% plot(validating.Time, validating.(fieldnames{i}), ".");
 % title(['Filtered ' fieldnames{i}]);
 % xlabel('Time [s]'); % X-axis label
 % ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Concatenate field name with unit and set it as Y-axis label
