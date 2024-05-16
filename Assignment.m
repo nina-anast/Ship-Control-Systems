@@ -235,6 +235,8 @@ clearvars num_cols num_rows num_plots i ans
 %         Data2024(removedIndices,:) = [];
 %     end
 % end
+% 
+% clearvars data_filt filteredData filteredTime idx j removedIndices removedTimes thresholds time_filt
 %%
 % plot_differences(Data2024,fieldnames,units,data_filt,time_filt,4)
 % Χωρισμός Δεδομένων:
@@ -255,15 +257,12 @@ clearvars num_cols num_rows num_plots i ans
 %     data2 = Data2024.(fieldname);
 %     times2 = Data2024.Time;
 % 
-%     % Sort data indices based on time
-%     [~, sorted_indices] = sort(times2);
+%     % Create indices for cross-validation with 80% training and 20% testing
+%     cv = cvpartition(size(data2, 1), 'Holdout', test_percent);
 % 
-%     % Calculate indices for training and validation sets based on time
-%     num_samples = length(data2);
-%     num_train_samples = round(num_samples * train_percent);
-% 
-%     train_indices = sorted_indices(1:num_train_samples);
-%     val_indices = sorted_indices(num_train_samples+1:end);
+%     % Get indices for training and testing sets
+%     train_idx = cv.training;
+%     test_idx = cv.test;
 % 
 %     % Split the data into training and testing sets
 %     training.(fieldname) = data2(train_idx, :);
@@ -291,20 +290,17 @@ clearvars num_cols num_rows num_plots i ans
 %     fieldname = fieldnames{i};
 % 
 %     % Extract the data and corresponding times corresponding to the field name
-%     data2 = testing.(fieldname);
-%     times2 = testing.Time;
+%     data2 = training.(fieldname);
+%     times2 = training.Time;
 % 
-%     % Sort data indices based on time
-%     [~, sorted_indices] = sort(times2);
+%     % Create indices for cross-validation with 80% training and 20% testing
+%     cv = cvpartition(size(data2, 1), 'Holdout', val_percent);
 % 
-%     % Calculate indices for training and validation sets based on time
-%     num_samples = length(data2);
-%     num_train_samples = round(num_samples * train_percent);
+%     % Get indices for training and testing sets
+%     train_idx = cv.training;
+%     val_idx = cv.test;
 % 
-%     train_indices = sorted_indices(1:num_train_samples);
-%     val_indices = sorted_indices(num_train_samples+1:end);
-% 
-%     % Split the data into training and validating sets
+%     % Split the data into training and testing sets
 %     training2.(fieldname) = data2(train_idx, :);
 %     validating.(fieldname) = data2(val_idx, :);
 % end
@@ -320,7 +316,7 @@ clearvars num_cols num_rows num_plots i ans
 %% 
 % *To check the separation was ok:*
 
-% i = 4;
+% i = 5;
 % 
 % % Plot unfiltered data
 % figure;
@@ -332,7 +328,7 @@ clearvars num_cols num_rows num_plots i ans
 % 
 % % Plot filtered data
 % subplot(2,1,2); % Plot on the second row, first column
-% plot(validating.Time, validating.(fieldnames{i}), ".");
+% plot(testing.Time, testing.(fieldnames{i}), ".");
 % title(['Filtered ' fieldnames{i}]);
 % xlabel('Time [s]'); % X-axis label
 % ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Concatenate field name with unit and set it as Y-axis label
@@ -342,12 +338,15 @@ clearvars num_cols num_rows num_plots i ans
 
 % Load the training data from the .mat file
 training = load('training2_data.mat');
+training = struct2table(training.training2)
 
 % Load the testing data from the .mat file
-load('testing_data.mat');
+testing = load('testing_data.mat');
+testing = struct2table(testing.testing)
 
 % Load the validating data from the .mat file
-load('validating_data.mat');
+validating = load('validating_data.mat');
+validating = struct2table(validating.validating)
 % Functions
 % Για την επιλογή των *thresholds*:
 
