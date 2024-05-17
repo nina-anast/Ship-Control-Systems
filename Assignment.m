@@ -238,7 +238,10 @@ clearvars num_cols num_rows num_plots i ans
 % 
 % clearvars data_filt filteredData filteredTime idx j removedIndices removedTimes thresholds time_filt
 %%
-% plot_differences(Data2024,fieldnames,units,data_filt,time_filt,4)
+% % Save training and testing structs to files
+% filtered_data_file = 'filtered_data.mat';
+% save(filtered_data_file, 'Data2024');
+% % plot_differences(Data2024,fieldnames,units,data_filt,time_filt,4)
 % Χωρισμός Δεδομένων:
 
 % % Initialize structs to store training and testing data
@@ -254,8 +257,8 @@ clearvars num_cols num_rows num_plots i ans
 %     fieldname = fieldnames{i};
 % 
 %     % Extract the data directly from Data2024
-%     data2 = Data2024.(fieldname);
-%     times2 = Data2024.Time;
+%     data2 = filtered_data.(fieldname);
+%     times2 = filtered_data.Time;
 % 
 %     % Create indices for cross-validation with 80% training and 20% testing
 %     cv = cvpartition(size(data2, 1), 'Holdout', test_percent);
@@ -335,6 +338,10 @@ clearvars num_cols num_rows num_plots i ans
 % clearvars i
 %% 
 % *Load previewsly made training and testing data:*
+
+% Load previewsly filtered Data
+filtered_data = load("filtered_data.mat");
+filtered_data = filtered_data.Data2024
 
 % Load the training data from the .mat file
 training = load('training2_data.mat');
