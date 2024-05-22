@@ -249,7 +249,7 @@ clearvars num_cols num_rows num_plots i ans
 % i = 8;
 % fieldname = fieldnames{i};
 % % Normalize Data
-% [normalizedValidating,centerValueValidating,scaleValueValidating] = normalize(validating,"range");
+% [normalizedTraining,centerValueTraining,scaleValueTraining] = normalize(training,"range");
 % 
 % % Display results
 % figure
@@ -260,7 +260,7 @@ clearvars num_cols num_rows num_plots i ans
 % ylabel(fieldnames{i})
 % 
 % nexttile
-% plot(normalizedValidating.(fieldnames{i}),"Color",[0 114 189]/255,"LineWidth",1.5,...
+% plot(normalizedTraining.(fieldnames{i}),"Color",[0 114 189]/255,"LineWidth",1.5,...
 %     "DisplayName","Normalized data")
 % legend
 % ylabel(fieldnames{i})
@@ -390,6 +390,26 @@ testing = testing.normalizedTesting
 % Load the validating data from the .mat file
 validating = load('separated_data\normalized\validating_data-normalized.mat');
 validating = validating.normalizedValidating
+%% 
+% *Get initial data from normalized:*
+
+% Reverting the normalization
+originalTesting = testing .* scaleValueTesting + centerValueTesting;
+
+% Display results
+figure
+tiledlayout(2,1);
+nexttile
+plot(originalTesting.(fieldnames{i}),"Color",[77 190 238]/255,"DisplayName","Input data")
+legend
+ylabel(fieldnames{i})
+
+nexttile
+plot(normalizedTesting.(fieldnames{i}),"Color",[0 114 189]/255,"LineWidth",1.5,...
+    "DisplayName","Normalized data")
+legend
+ylabel(fieldnames{i})
+set(gcf,"NextPlot","New")
 % Correlation Matrix
 
 % % Convert the table to a matrix
@@ -406,8 +426,11 @@ validating = validating.normalizedValidating
 training_ds = arrayDatastore(training.(fieldnames{1}));
 validating_ds = arrayDatastore(validating.(fieldnames{1}));
 
+% Specify the field indices to loop through
+field_indices = [3];
+
 % Loop through the remaining fields and combine datastores
-for i = 2:3 % numel(fieldnames)
+for i = field_indices % numel(fieldnames)
     add_train_ds = arrayDatastore(training.(fieldnames{i}));
     training_ds = combine(training_ds, add_train_ds);
 
