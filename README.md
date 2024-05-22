@@ -32,3 +32,6 @@
 
     1. NOx
     2. Fuel Consumption
+
+Hard pull:
+git reset --hard origin/master
