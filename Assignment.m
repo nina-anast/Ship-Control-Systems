@@ -51,6 +51,7 @@ for i = 2:numel(fieldnames) % Start from the second column
     title(fieldnames{i}); % Set title as column name
     xlabel('Time [s]'); % X-axis label
     ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Y-axis label
+    grid on
 end
 hold off
 clearvars num_cols num_rows num_plots i ans
@@ -120,6 +121,8 @@ clearvars num_cols num_rows num_plots i ans
 % end
 % 
 % clearvars filteredData filteredTime j
+%%
+% plot_differences(Data2024,fieldnames,units,data_filt,time_filt,10)
 %% 
 % Μέθοδος *Interquartile Range*:
 % 
@@ -644,6 +647,7 @@ function plot_differences(Data2024,fieldnames,units,data_filt,time_filt,i)
     title(fieldnames{i}); % Set title as column name
     xlabel('Time [s]'); % X-axis label
     ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Concatenate field name with unit and set it as Y-axis label
+    grid on
     
     % Plot unfiltered data
     subplot(2,1,2); % Plot on the second row, first column
@@ -651,4 +655,5 @@ function plot_differences(Data2024,fieldnames,units,data_filt,time_filt,i)
     title(['Filtered ' fieldnames{i}]);
     xlabel('Time [s]'); % X-axis label
     ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Concatenate field name with unit and set it as Y-axis label
+    grid on
 end
