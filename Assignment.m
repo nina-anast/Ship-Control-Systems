@@ -1,7 +1,13 @@
-%% *Εργασία Ειδικά Συστήματα Πλοίου*
+%% *Εργασία: Ειδικά Συστήματα Πλοίου*
+% Σχολή Ναυπηγών Μηχανολόγων Μηχανικών, ΕΜΠ
+% 
+% Αναστοπούλου Ευγενία-Συραϊνώ, nm20034
+% 
+% Καμιζούλης Χρήστος, nm20031
+% 
+% 8ο εξάμηνο
 % 
 %% *Ερώτημα 1:* Ανάλυση των δεδομένων με τη χρήση διαφόρων γραφικών παραστάσεων
-% 
 
 clear all
 warning("off")
@@ -20,9 +26,6 @@ fclose(fid);
 units = strsplit(second_line, '\t');
 % Convert cell array to array
 units = string(units);
-
-clearvars fid second_line ans
-%%
 % Initialize the fieldnames of the data
 fieldnames = Data2024.Properties.VariableNames
 % Initialize a struct to store values
@@ -54,18 +57,18 @@ for i = 2:numel(fieldnames) % Start from the second column
     grid on
 end
 hold off
-clearvars num_cols num_rows num_plots i ans
+clearvars fid second_line num_cols num_rows num_plots i ans
 % Ανάλυση Δεδομένων
 
-% i = 2;
-% figure; % Create a new figure
-% plot(data.Time, data.(fieldnames{i}),".");
-% title(fieldnames{i}); % Set title as column name
-% xlabel('Time [s]'); % X-axis label
-% 
-% % Concatenate field name with unit and set it as Y-axis label
-% ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
-% clearvars i
+i = 7;
+figure; % Create a new figure
+plot(data.Time, data.(fieldnames{i}),".");
+title(fieldnames{i}); % Set title as column name
+xlabel('Time [s]'); % X-axis label
+
+% Concatenate field name with unit and set it as Y-axis label
+ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
+clearvars i
 %% 
 % *NOx:* Έχουν περιοδική κίνηση με απόσβεση, φθίνουσα. Περίοδος είναι 225s. 
 % Η μέση τιμή μικραίνει με την πάροδο του χρόνου, ξεκινάει από 600 ppm και καταλήγει 
@@ -78,25 +81,26 @@ clearvars num_cols num_rows num_plots i ans
 % *Λάμδα:* Έχει τιμές μικρότερες του 20 εως την στιγμή 2619s που γίνεται το 
 % πρώτο peak. Έχει συνολικά 8 peaks με τα μέγιστα να ξεπερνάνε την τιμή 130.
 %% Ερώτημα 2: Φιλτράρισμα και μετασχηματισμός των δεδομένων.
-% Το παρακάτω μπορεί να χρησιμοποιηθεί για να παράγουμε τα φιλτραρισμένα δεδομένα, 
-% επιλέγοντας κάθε φορά το σωστό threshold.
+% Χρησιμοποιήθηκαν συνολικά 3 φίλτρα. Το πρώτο που θα ασχοληθούμε θα είναι το 
+% Chauvenet. Το παρακάτω μπορεί να χρησιμοποιηθεί για να παράγουμε τα φιλτραρισμένα 
+% δεδομένα, επιλέγοντας κάθε φορά το σωστό threshold.
 
-% % Initialize a struct to store filtered values
-% data_filt = struct();
-% time_filt = struct();
-% 
-% % Store thresholds
-% thresholds = zeros(1,length(fieldnames));
-% 
-% clc
-% 
-% for j = 2:numel(fieldnames)
-%     [filteredData, filteredTime,threshold] = chauvenetFilter(Data2024,fieldnames,units,j);
-%     data_filt.(fieldnames{j}) = filteredData;
-%     time_filt.(fieldnames{j}) = filteredTime;
-%     thresholds(1,j) = threshold;
-% end
-% clearvars j threshold filteredData filteredTime
+% Initialize a struct to store filtered values
+data_filt = struct();
+time_filt = struct();
+
+% Store thresholds
+thresholds = zeros(1,length(fieldnames));
+
+clc
+
+for j = 2:numel(fieldnames)
+    [filteredData, filteredTime,threshold] = chauvenetFilter(Data2024,fieldnames,units,j);
+    data_filt.(fieldnames{j}) = filteredData;
+    time_filt.(fieldnames{j}) = filteredTime;
+    thresholds(1,j) = threshold;
+end
+clearvars j threshold filteredData filteredTime
 % Αποθήκευση Φιλτραρισμένων Δεδομένων
 % Για να αναπαράγουμε τα παραπάνω δεδομένα θα αποθηκεύσουμε τα thresholds που 
 % παράγαμε και θα μπορούμε να φορτώνουμε ξανά τα παραπάνω δεδομένα.
@@ -107,197 +111,139 @@ clearvars num_cols num_rows num_plots i ans
 % Για να ξαναποκτήσουμε τα φιλτραρισμένα δεδομένα, μπορούμε να τρέξουμε τον 
 % παρακάτω κώδικα:
 
-% % Initialize a struct to store filtered values
-% data_filt = struct();
-% time_filt = struct();
-% 
-% % Read thresholds from the CSV file
-% thresholds = readmatrix('thresholds.csv');
-% 
-% for j = 2:numel(fieldnames)
-%     [filteredData, filteredTime, ~] = chauvenetFilter2(Data2024, fieldnames, units, j, thresholds(j));
-%     data_filt.(fieldnames{j}) = filteredData;
-%     time_filt.(fieldnames{j}) = filteredTime;
-% end
-% 
-% clearvars filteredData filteredTime j
-%%
-% plot_differences(Data2024,fieldnames,units,data_filt,time_filt,10)
+% Initialize a struct to store filtered values
+data_filt = struct();
+time_filt = struct();
+
+% Read thresholds from the CSV file
+thresholds = readmatrix('thresholds.csv');
+
+for j = 2:numel(fieldnames)
+    [filteredData, filteredTime, ~] = chauvenetFilter2(Data2024, fieldnames, units, j, thresholds(j));
+    data_filt.(fieldnames{j}) = filteredData;
+    time_filt.(fieldnames{j}) = filteredTime;
+end
+
+% *Οπτικοποίηση Φιλτραρίσματος*
+% Με την παρακάτω εντολή, μπορούμε να συγκρίνουμε τα αποτελέσματα του φιλτραρίσματος 
+% που πραγματοποιήσαμε:
+
+plot_differences(Data2024,fieldnames,units,data_filt,time_filt,4)
+clearvars filteredData filteredTime j
 %% 
 % Μέθοδος *Interquartile Range*:
-% 
-% Apply to:
-%% 
-% * Fuel Consumption (3)
-% * Intake Pressure (6)
-% * Torque Reference (7)
-% * Rot Speed (8)
-% * Engine Torque (9)
-% * (EGR Command(10) ->ιδιο με threshold)
-% * Exhaust Gas Temperature (11)
 
-% % Initialize a struct to store filtered values
-% data_filt = struct();
-% time_filt = struct();
-% 
-% for j = 2:numel(fieldnames)
-%     [filteredData,filteredTime] = IQR(Data2024.(fieldnames{j}),Data2024.Time);
-%     data_filt.(fieldnames{j}) = filteredData;
-%     time_filt.(fieldnames{j}) = filteredTime;
-% end 
-% 
-% clearvars filteredData filteredTime j
-%% 
-% Plot for *filtered data*
+% Initialize a struct to store filtered values
+data_filt = struct();
+time_filt = struct();
 
-% i = 3;
-% figure; % Create a new figure
-% plot(time_filt.(fieldnames{i}),data_filt.(fieldnames{i}),".");
-% title(fieldnames{i}); % Set title as column name
-% xlabel('Time [s]'); % X-axis label
-% 
-% % Concatenate field name with unit and set it as Y-axis label
-% ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
+for j = 2:numel(fieldnames)
+    [filteredData,filteredTime] = IQR(Data2024.(fieldnames{j}),Data2024.Time);
+    data_filt.(fieldnames{j}) = filteredData;
+    time_filt.(fieldnames{j}) = filteredTime;
+end 
+plot_differences(Data2024,fieldnames,units,data_filt,time_filt,4)
+clearvars filteredData filteredTime j
 %% 
 % *Remove outliers using median:*
-% 
-% use in:
-%% 
-% * fuel consumption (3)
-% * exhaust mass flow (5)
-% * Torque Reference (7)
-% * Rot Speed (8)
-% * Engine Torque (9)
-% * Exhaust Gas Temperature (11)
 
-% % Initialize a struct to store filtered values and corresponding times
-% data_filt = struct();
-% time_filt = struct();
-% 
-% i = 11;
-% % Filter the data using rmoutliers
-% [data_filt.(fieldnames{i}), idx] = rmoutliers(Data2024.(fieldnames{i}), "median");
-% 
-% % Retain corresponding times using logical indexing
-% time_filt.(fieldnames{i}) = Data2024.Time;
-% time_filt.(fieldnames{i})(idx) = [];
-% 
-% % Plot unfiltered data
-% figure;
-% subplot(2,1,1); % Plot on the first row, first two columns
-% plot(Data2024.Time, Data2024.(fieldnames{i}),".");
-% title(fieldnames{i}); % Set title as column name
-% xlabel('Time [s]'); % X-axis label
-% ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Concatenate field name with unit and set it as Y-axis label
-% 
-% % Plot unfiltered data
-% subplot(2,1,2); % Plot on the second row, first column
-% plot(time_filt.(fieldnames{i}),data_filt.(fieldnames{i}),".");
-% title(fieldnames{i}); % Set title as column name
-% xlabel('Time [s]'); % X-axis label
-% ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Concatenate field name with unit and set it as Y-axis label
+% Initialize a struct to store filtered values and corresponding times
+data_filt = struct();
+time_filt = struct();
+
+for i = 2:numel(fieldnames)
+    % Filter the data using rmoutliers
+    [data_filt.(fieldnames{i}), idx] = rmoutliers(Data2024.(fieldnames{i}), "median");
+    
+    % Retain corresponding times using logical indexing
+    time_filt.(fieldnames{i}) = Data2024.Time;
+    time_filt.(fieldnames{i})(idx) = [];
+end
+plot_differences(Data2024,fieldnames,units,data_filt,time_filt,4)
+clearvars i idx
 %% 
 % *Τελικό φιλτράρισμα:*
+% 
+% Τελικά αποφασίσαμε να φιλτράρουμε τα δεδομένα σύμφωνα με τον παρακάτω τρόπο.
 
-% % Initialize a struct to store filtered values
-% data_filt = struct();
-% time_filt = struct();
-% 
-% % Read thresholds from the CSV file
-% thresholds = readmatrix('thresholds.csv');
-% 
-% for j = 2:numel(fieldnames)
-%     if j == 2 || j == 4 || j == 10
-%         [filteredData, filteredTime] = chauvenetFilter2(Data2024, fieldnames, units, j, thresholds(j));
-%         % Calculate removedIndices based on original and filtered data
-%         removedIndices = find(~ismember(Data2024.Time, filteredTime));
-%         data_filt.(fieldnames{j}) = filteredData;
-%         time_filt.(fieldnames{j}) = filteredTime;
-%         removedTimes = unique(Data2024.Time(removedIndices));
-%         time_filt.removed.(fieldnames{j}) = removedTimes;
-%         % Remove corresponding data
-%         Data2024(removedIndices,:) = [];
-%     elseif j == 3 || j == 6 || j == 7
-%         [filteredData, filteredTime] = IQR(Data2024.(fieldnames{j}), Data2024.Time);
-%         % Calculate removedIndices based on original and filtered data
-%         removedIndices = find(~ismember(Data2024.Time, filteredTime));
-%         data_filt.(fieldnames{j}) = filteredData;
-%         time_filt.(fieldnames{j}) = filteredTime;
-%         removedTimes = unique(Data2024.Time(removedIndices));
-%         time_filt.removed.(fieldnames{j}) = removedTimes;
-%         % Remove corresponding data
-%         Data2024(removedIndices,:) = [];
-%     elseif j == 5 || j == 8 || j == 9 || j == 11
-%         % Filter the data using rmoutliers
-%         [data_filt.(fieldnames{j}), idx] = rmoutliers(Data2024.(fieldnames{j}), "median");
-%         % Retain corresponding times using logical indexing
-%         time_filt.(fieldnames{j}) = Data2024.Time;
-%         removedIndices = idx;
-%         removedTimes = unique(Data2024.Time(removedIndices));
-%         time_filt.removed.(fieldnames{j}) = removedTimes;
-%         % Remove corresponding data
-%         Data2024(removedIndices,:) = [];
-%     end
-% end
-% 
-% clearvars data_filt filteredData filteredTime idx j removedIndices removedTimes thresholds time_filt
-%%
-% % Save training and testing structs to files
-% filtered_data_file = 'filtered_data.mat';
-% save(filtered_data_file, 'Data2024');
-% % plot_differences(Data2024,fieldnames,units,data_filt,time_filt,4)
-% *Κανονικοποίηση Δεδομένων:*
-% 
+% Initialize a struct to store filtered values
+data_filt = struct();
+time_filt = struct();
 
-% i = 8;
-% fieldname = fieldnames{i};
-% % Normalize Data
-% [normalizedTraining,centerValueTraining,scaleValueTraining] = normalize(training,"range");
-% 
-% % Display results
-% figure
-% tiledlayout(2,1);
-% nexttile
-% plot(filtered_data.(fieldnames{i}),"Color",[77 190 238]/255,"DisplayName","Input data")
-% legend
-% ylabel(fieldnames{i})
-% 
-% nexttile
-% plot(normalizedTraining.(fieldnames{i}),"Color",[0 114 189]/255,"LineWidth",1.5,...
-%     "DisplayName","Normalized data")
-% legend
-% ylabel(fieldnames{i})
-% set(gcf,"NextPlot","New")
+% Read thresholds from the CSV file
+thresholds = readmatrix('thresholds.csv');
+
+
+% Create a copy of Data2024 to perform filtering on
+filteredData2024 = Data2024;
+
+for j = 2:numel(fieldnames)
+    if j == 2 || j == 4 || j == 10
+        [filteredData, filteredTime] = chauvenetFilter2(filteredData2024, fieldnames, units, j, thresholds(j));
+        % Calculate removedIndices based on original and filtered data
+        removedIndices = find(~ismember(filteredData2024.Time, filteredTime));
+        data_filt.(fieldnames{j}) = filteredData;
+        time_filt.(fieldnames{j}) = filteredTime;
+        removedTimes = unique(filteredData2024.Time(removedIndices));
+        time_filt.removed.(fieldnames{j}) = removedTimes;
+        % Remove corresponding data
+        filteredData2024(removedIndices,:) = [];
+    elseif j == 3 || j == 6 || j == 7
+        [filteredData, filteredTime] = IQR(filteredData2024.(fieldnames{j}), filteredData2024.Time);
+        % Calculate removedIndices based on original and filtered data
+        removedIndices = find(~ismember(filteredData2024.Time, filteredTime));
+        data_filt.(fieldnames{j}) = filteredData;
+        time_filt.(fieldnames{j}) = filteredTime;
+        removedTimes = unique(filteredData2024.Time(removedIndices));
+        time_filt.removed.(fieldnames{j}) = removedTimes;
+        % Remove corresponding data
+        filteredData2024(removedIndices,:) = [];
+    elseif j == 5 || j == 8 || j == 9 || j == 11
+        % Filter the data using rmoutliers
+        [data_filt.(fieldnames{j}), idx] = rmoutliers(filteredData2024.(fieldnames{j}), "median");
+        % Retain corresponding times using logical indexing
+        time_filt.(fieldnames{j}) = filteredData2024.Time;
+        removedIndices = idx;
+        removedTimes = unique(filteredData2024.Time(removedIndices));
+        time_filt.removed.(fieldnames{j}) = removedTimes;
+        % Remove corresponding data
+        filteredData2024(removedIndices,:) = [];
+    end
+end
+
+filteredData2024
+clearvars data_filt filteredData filteredTime idx j removedIndices removedTimes thresholds time_filt data
 % Χωρισμός Δεδομένων:
 
-% % Initialize structs to store training and testing data
-% training = struct();
-% testing = struct();
-% 
-% for i = 1:numel(fieldnames)
-%     % Define the percentage of data for training and testing
-%     train_percent = 0.8;
-%     test_percent = 1 - train_percent;
-% 
-%     % Get the field name
-%     fieldname = fieldnames{i};
-% 
-%     % Extract the data directly from Data2024
-%     data2 = normalizedTable.(fieldname);
-%     times2 = normalizedTable.Time;
-% 
-%     % Create indices for cross-validation with 80% training and 20% testing
-%     cv = cvpartition(size(data2, 1), 'Holdout', test_percent);
-% 
-%     % Get indices for training and testing sets
-%     train_idx = cv.training;
-%     test_idx = cv.test;
-% 
-%     % Split the data into training and testing sets
-%     training.(fieldname) = data2(train_idx, :);
-%     testing.(fieldname) = data2(test_idx, :);
-% end
-% 
+% Initialize structs to store training and testing data
+training = struct();
+testing = struct();
+
+for i = 1:numel(fieldnames)
+    % Define the percentage of data for training and testing
+    train_percent = 0.8;
+    test_percent = 1 - train_percent;
+
+    % Get the field name
+    fieldname = fieldnames{i};
+
+    % Extract the data directly from Data2024
+    data2 = filteredData2024.(fieldname);
+    times2 = filteredData2024.Time;
+
+    % Create indices for random partition with 75% training and 25% testing
+    cv = cvpartition(size(data2, 1), 'Holdout', test_percent);
+
+    % Get indices for training and testing sets
+    train_idx = cv.training;
+    test_idx = cv.test;
+
+    % Split the data into training and testing sets
+    training.(fieldname) = data2(train_idx, :);
+    testing.(fieldname) = data2(test_idx, :);
+end
+training
+testing
 % % Define file paths for saving
 % training_file = 'training_data-normalized.mat';  % Specify the file path for saving training data
 % testing_file = 'testing_data-normalized.mat';    % Specify the file path for saving testing data
@@ -306,34 +252,35 @@ clearvars num_cols num_rows num_plots i ans
 % save(training_file, 'training');
 % save(testing_file, 'testing');
 %%
-% % Initialize structs to store training and validating data
-% training2 = struct();
-% validating = struct();
-% 
-% for i = 1:numel(fieldnames)
-%     % Define the percentage of data for training and testing
-%     train_percent = 0.8;
-%     val_percent = 1 - train_percent;
-% 
-%     % Get the field name
-%     fieldname = fieldnames{i};
-% 
-%     % Extract the data and corresponding times corresponding to the field name
-%     data2 = training.(fieldname);
-%     times2 = training.Time;
-% 
-%     % Create indices for cross-validation with 80% training and 20% testing
-%     cv = cvpartition(size(data2, 1), 'Holdout', val_percent);
-% 
-%     % Get indices for training and testing sets
-%     train_idx = cv.training;
-%     val_idx = cv.test;
-% 
-%     % Split the data into training and testing sets
-%     training2.(fieldname) = data2(train_idx, :);
-%     validating.(fieldname) = data2(val_idx, :);
-% end
-% 
+% Initialize structs to store training and validating data
+training2 = struct();
+validating = struct();
+
+for i = 1:numel(fieldnames)
+    % Define the percentage of data for training and testing
+    train_percent = 0.8;
+    val_percent = 1 - train_percent;
+
+    % Get the field name
+    fieldname = fieldnames{i};
+
+    % Extract the data and corresponding times corresponding to the field name
+    data2 = training.(fieldname);
+    times2 = training.Time;
+
+    % Create indices for cross-validation with 80% training and 20% testing
+    cv = cvpartition(size(data2, 1), 'Holdout', val_percent);
+
+    % Get indices for training and testing sets
+    train_idx = cv.training;
+    val_idx = cv.test;
+
+    % Split the data into training and testing sets
+    training2.(fieldname) = data2(train_idx, :);
+    validating.(fieldname) = data2(val_idx, :);
+end
+training2
+validating
 % % Define file paths for saving
 % training_file = 'training2_data-normalized.mat';  % Specify the file path for saving training data
 % validating_file = 'validating_data-normalized.mat';    % Specify the file path for saving testing data
@@ -341,107 +288,132 @@ clearvars num_cols num_rows num_plots i ans
 % % Save training and validating structs to files
 % save(training_file, 'training2');
 % save(validating_file, 'validating');
-
-%% 
-% *To check the separation was ok:*
-
-% i = 5;
-% 
-% % Plot unfiltered data
-% figure;
-% subplot(2,1,1); % Plot on the first row, first two columns
-% plot(Data2024.Time, Data2024.(fieldnames{i}), ".");
-% title(fieldnames{i}); % Set title as column name
-% xlabel('Time [s]'); % X-axis label
-% ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Concatenate field name with unit and set it as Y-axis label
-% 
-% % Plot filtered data
-% subplot(2,1,2); % Plot on the second row, first column
-% plot(testing.Time, testing.(fieldnames{i}), ".");
-% title(['Filtered ' fieldnames{i}]);
-% xlabel('Time [s]'); % X-axis label
-% ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Concatenate field name with unit and set it as Y-axis label
-% clearvars i
-%% 
-% *Load previewsly made training and testing data:*
-
-% % Load previewsly filtered Data
-% filtered_data = load("separated_data\filtered\filtered_data.mat");
-% filtered_data = filtered_data.Data2024
-% % Load the training data from the .mat file
-% training = load('separated_data\filtered\training2_data.mat');
-% training = struct2table(training.training2)
-% % Load the testing data from the .mat file
-% testing = load('separated_data\filtered\testing_data.mat');
-% testing = struct2table(testing.testing)
-% % Load the validating data from the .mat file
-% validating = load('separated_data\filtered\validating_data.mat');
-% validating = struct2table(validating.validating)
+clearvars cv data2 fieldname i test_idx test_percent times2 train_idx train_percent training validx val_percent
 %% 
 % *Load previewsly made training and testing data:*
 
 % Load previewsly filtered Data
-filtered_data = load("separated_data\normalized\normalized_data.mat");
-filtered_data = filtered_data.normalizedTable
-% filtered_data = filtered_data.Data2024
+filtered_data = load("separated_data\filtered_data.mat");
+filtered_data = filtered_data.Data2024
 % Load the training data from the .mat file
-training = load('separated_data\normalized\training_data-normalized.mat');
-training = training.normalizedTraining
+training = load('separated_data\training2_data.mat');
+training = struct2table(training.training2)
 % Load the testing data from the .mat file
-testing = load('separated_data\normalized\testing_data-normalized.mat');
-testing = testing.normalizedTesting
+testing = load('separated_data\testing_data.mat');
+testing = struct2table(testing.testing)
 % Load the validating data from the .mat file
-validating = load('separated_data\normalized\validating_data-normalized.mat');
-validating = validating.normalizedValidating
-%% 
-% *Get initial data from normalized:*
+validating = load('separated_data\validating_data.mat');
+validating = struct2table(validating.validating)
+% Correlation Matrix
 
-% Reverting the normalization
-originalTesting = testing .* scaleValueTesting + centerValueTesting;
+% Convert the table to a matrix
+dataMatrix = table2array(filtered_data);
+correlationMatrix = corr(dataMatrix);
+figure;
+
+% Plot correlation matrix
+corrplot(dataMatrix, 'varNames', filtered_data.Properties.VariableNames);
+clearvars correlationMatrix dataMatrix
+% *Κανονικοποίηση Δεδομένων:*
+
+i = 5;
+fieldname = fieldnames{i};
+% Normalize Data
+[normalizedTraining,centerValueTraining,scaleValueTraining] = normalize(training,"range");
+[normalizedTesting,centerValueTesting,scaleValueTesting] = normalize(testing,"range");
+[normalizedValidating,centerValueValidating,scaleValueValidating] = normalize(validating,"range");
 
 % Display results
 figure
 tiledlayout(2,1);
 nexttile
-plot(originalTesting.(fieldnames{i}),"Color",[77 190 238]/255,"DisplayName","Input data")
+plot(filtered_data.(fieldnames{i}),"Color",[77 190 238]/255,"DisplayName","Input data")
 legend
 ylabel(fieldnames{i})
+grid on
 
 nexttile
-plot(normalizedTesting.(fieldnames{i}),"Color",[0 114 189]/255,"LineWidth",1.5,...
+plot(normalizedTraining.(fieldnames{i}),"Color",[0 114 189]/255,"LineWidth",1.5,...
     "DisplayName","Normalized data")
 legend
 ylabel(fieldnames{i})
+grid on
 set(gcf,"NextPlot","New")
-% Correlation Matrix
-
-% % Convert the table to a matrix
-% dataMatrix = table2array(filtered_data);
-% correlationMatrix = corr(dataMatrix);
-% figure;
-% 
-% % Plot correlation matrix
-% % corrplot(dataMatrix, 'varNames', filtered_data.Properties.VariableNames);
+clearvars i fieldname
 % Εκπαίδευση Νευρωνικού
-% Πρώτα πρέπει να μετατρέψουμε τα δεδομένα μας σε datastores
+% Πρώτα πρέπει να μετατρέψουμε τα δεδομένα μας σε matrices
 
-% Initialize the datastore with the first field
-training_ds = arrayDatastore(training.(fieldnames{1}));
-validating_ds = arrayDatastore(validating.(fieldnames{1}));
+% Convert Time, RotSpeed and lambda's test, train and validation sets from tables to matrices
+input1_train = table2array([normalizedTraining(:,1) normalizedTraining(:,4) normalizedTraining(:,8)]);
+input1_val = table2array([normalizedValidating(:,1) normalizedValidating(:,4) normalizedValidating(:,8)]);
+input1_test = table2array([normalizedTesting(:,1) normalizedTesting(:,4) normalizedTesting(:,8)]);
 
-% Specify the field indices to loop through
-field_indices = [3];
+% Convert NOx's test, train and validation sets from tables to matrices
+NOx_train = table2array(normalizedTraining(:,2));
+NOx_val =  table2array(normalizedValidating(:,2));
+NOx_test = table2array(normalizedTesting(:,2));
 
-% Loop through the remaining fields and combine datastores
-for i = field_indices % numel(fieldnames)
-    add_train_ds = arrayDatastore(training.(fieldnames{i}));
-    training_ds = combine(training_ds, add_train_ds);
+% Convert Time,lambda,ExhaustGasMassflow and Intake Prssure's test, train and validation sets from tables to matrices
+input2_train = table2array([normalizedTraining(:,1) normalizedTraining(:,4) normalizedTraining(:,5) normalizedTraining(:,6)]);
+input2_val = table2array([normalizedValidating(:,1) normalizedValidating(:,4) normalizedValidating(:,5) normalizedValidating(:,6)]);
+input2_test = table2array([normalizedTesting(:,1) normalizedTesting(:,4) normalizedTesting(:,5) normalizedTesting(:,6)]);
 
-    add_val_ds = arrayDatastore(validating.(fieldnames{i}));
-    validating_ds = combine(validating_ds, add_val_ds);
-end
+% Convert Fuel Consumption's test, train and validation sets from tables to matrices
+Fuel_Consumption_train = table2array(normalizedTraining(:,2));
+Fuel_Consumption_val =  table2array(normalizedValidating(:,2));
+Fuel_Consumption_test = table2array(normalizedTesting(:,2));
+%%
+% Input NOx network's architecture as recommended
+layers1 = [
+    featureInputLayer(3)
+    fullyConnectedLayer(100)
+    reluLayer
+    fullyConnectedLayer(1)
+    regressionLayer];
 
-clearvars add_train_ds add_val_ds i 
+% Input NOx network's architecture as recommended
+layers2 = [
+    featureInputLayer(4)
+    fullyConnectedLayer(100)
+    reluLayer
+    fullyConnectedLayer(1)
+    regressionLayer];
+
+% Open DeepNetworkDesigner App
+deepNetworkDesigner
+
+% Define training options 
+options1 = trainingOptions('adam',...
+    'Shuffle','every-epoch',...
+    'MiniBatchSize',1000, ...
+    'MaxEpochs',10, ...
+    'InitialLearnRate',1e-3, ...
+    'ValidationData',{input1_val, NOx_val},...
+    'Plots','training-progress', ...
+    'Verbose',false);
+
+
+% Train 1st neural network to predict NOx emissions
+NOx_net = trainNetwork(input1_train,NOx_train,layers1,options1);
+%%
+% Plot NOx emissions prediction using lambda's training, validation and test sets 
+pred_and_plot2(input1_test,NOx_test,NOx_net,1,2,fieldnames,units,centerValueTesting,scaleValueTesting)
+%%
+% Define training options 
+options2 = trainingOptions('adam',...
+    'Shuffle','every-epoch',...
+    'MiniBatchSize',1000, ...
+    'MaxEpochs',10, ...
+    'InitialLearnRate',1e-3, ...
+    'ValidationData',{input2_val, Fuel_Consumption_val},...
+    'Plots','training-progress', ...
+    'Verbose',false);
+
+% Train 2nd neural network to predict Fuel Consumption
+Fuel_Consumption_net = trainNetwork(input2_train,Fuel_Consumption_train,layers2,options2);
+%%
+% Plot NOx emissions prediction using lambda's training, validation and test sets 
+pred_and_plot2(input2_test,Fuel_Consumption_test,Fuel_Consumption_net,1,3,fieldnames,units,centerValueTesting,scaleValueTesting)
 % Functions
 % Για την επιλογή των *thresholds*:
 
@@ -655,5 +627,42 @@ function plot_differences(Data2024,fieldnames,units,data_filt,time_filt,i)
     title(['Filtered ' fieldnames{i}]);
     xlabel('Time [s]'); % X-axis label
     ylabel(sprintf('%s %s', fieldnames{i}, units{i})); % Concatenate field name with unit and set it as Y-axis label
+    grid on
+end
+%% 
+% 
+
+function [] = pred_and_plot(x,y,net,i,j,fieldnames)
+    preds = predict(net,x);
+    figure
+    x=x(:,i);
+    scatter(x,y,'r')
+    hold on
+    hold on
+    scatter(x,preds,'g')
+    title('Test vs Net prediction')
+    ylabel(sprintf('%s', fieldnames{j}));
+    xlabel(sprintf('%s', fieldnames{i}));
+    legend('Test','Net Prediction')
+    grid on
+end
+%% 
+% 
+
+function [] = pred_and_plot2(x,y,net,i,j,fieldnames,units,center,scale)
+    preds = predict(net,x);
+    figure
+    x = x(:,i);
+    x = x*scale{:,i}+center{:,i};
+    y = y*scale{:,j}+center{:,j};
+    preds = preds*scale{:,j}+center{:,j};
+    scatter(x,y,'r')
+    hold on
+    hold on
+    scatter(x,preds,'g')
+    title('Test vs Net prediction')
+    ylabel(sprintf('%s %s', fieldnames{j},units{j}));
+    xlabel(sprintf('%s %s', fieldnames{i},units{j}));
+    legend('Test','Net Prediction')
     grid on
 end
