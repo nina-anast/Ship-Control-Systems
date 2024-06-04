@@ -1,4 +1,4 @@
-function Corrcolormap(Data,myLabel)
+function Corrcolormap(Data,Label)
 %% This function plots correlation coefficients in a color map
 %% Input Data and names of the variables myLabel
 
@@ -36,9 +36,9 @@ hold(ax,'on')
 colormap(ax,'jet');
 tickvalues = 1:length(Cor);
 x = zeros(size(tickvalues));
-text(x, tickvalues, myLabel, 'HorizontalAlignment', 'right');
+text(x, tickvalues, Label, 'HorizontalAlignment', 'right');
 x(:) = length(Cor)+1;
-text(tickvalues, x, myLabel, 'HorizontalAlignment', 'right','Rotation',90);
+text(tickvalues, x, Label, 'HorizontalAlignment', 'right','Rotation',90);
 % Create circles
 theta = linspace(0,2*pi,50); % the smaller, the less memory req'd.
 h = arrayfun(@(i)fill(diamSize(i)/2 * cos(theta) + xAll(i), ...
