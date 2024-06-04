@@ -340,7 +340,7 @@ ylabel(fieldnames{i})
 grid on
 set(gcf,"NextPlot","New")
 clearvars i fieldname
-% Εκπαίδευση Νευρωνικού
+% Ερώτημα 4: Εκπαίδευση Νευρωνικού
 % Πρώτα πρέπει να μετατρέψουμε τα δεδομένα μας σε matrices
 
 % Convert Time, RotSpeed and lambda's test, train and validation sets from tables to matrices
@@ -395,7 +395,8 @@ options1 = trainingOptions('adam',...
 
 % Train 1st neural network to predict NOx emissions
 NOx_net = trainNetwork(input1_train,NOx_train,layers1,options1);
-%%
+% Ερώτημα 5: Αποτελέσματα
+
 % Plot NOx emissions prediction using lambda's training, validation and test sets 
 pred_and_plot2(input1_test,NOx_test,NOx_net,1,2,fieldnames,units,centerValueTesting,scaleValueTesting)
 %%
@@ -414,6 +415,88 @@ Fuel_Consumption_net = trainNetwork(input2_train,Fuel_Consumption_train,layers2,
 %%
 % Plot NOx emissions prediction using lambda's training, validation and test sets 
 pred_and_plot2(input2_test,Fuel_Consumption_test,Fuel_Consumption_net,1,3,fieldnames,units,centerValueTesting,scaleValueTesting)
+% Ερώτημα 6: Δημιουργία νέων παραμέτρων
+% Αρχικά, αντιστρέφουμε τον λόγο αέρα καυσίμου.
+
+Data2024.lamda_reversed = 1./Data2024.lambda
+fieldnames{12}='lamda_reversed'; units{12} = '-';
+i = 12;
+figure; % Create a new figure
+plot(Data2024.Time, Data2024.(fieldnames{i}),".");
+title(fieldnames{i}); % Set title as column name
+xlabel('Time [s]'); % X-axis label
+
+% Concatenate field name with unit and set it as Y-axis label
+ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
+%% 
+% Βλέπουμε ότι τα δεδομένα δεν χρειάζονται κάποιο φίλτρο πια.
+% 
+% NEW PARAMETERS:
+% 
+% *Power = Torque * RotSpeed / 60*
+% 
+% Thermal Efficiency = Power/(FOC*Calorific Value)
+% 
+% Air-Fuel Ratio: Intake Air Mass Flow/(λ*Fuel Consumption)
+% 
+% 
+
+Data2024.Power = Data2024.EngineTorque.*Data2024.Rot_Speed;
+fieldnames{13}='Power'; units{13} = 'W';
+i = 13;
+figure; % Create a new figure
+plot(Data2024.Time, Data2024.(fieldnames{i}),".");
+title(fieldnames{i}); % Set title as column name
+xlabel('Time [s]'); % X-axis label
+
+% Concatenate field name with unit and set it as Y-axis label
+ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
+Data2024.SFC = Data2024.FuelConsumption./Data2024.Power;
+fieldnames{14}='SFC'; units{14} = 'kg/kWh';
+i = 14;
+figure; % Create a new figure
+plot(Data2024.Time, Data2024.(fieldnames{i}),".");
+title(fieldnames{i}); % Set title as column name
+xlabel('Time [s]'); % X-axis label
+
+% Concatenate field name with unit and set it as Y-axis label
+ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
+%% 
+% Βλέπουμε ότι η ειδική κατανάλωση καυσίμου δεν έχει καλή συμπεριφορά, οπότε 
+% δεν θα την προσμετρήσουμε τελικά στις μεταβλητές μας και θα την αντικαταστήσουμε.
+
+Data2024 = removevars( Data2024 , 'SFC' );
+Data2024.LoadSpeedProduct = Data2024.Rot_Speed.*Data2024.Power;
+fieldnames{14}='LoadSpeedProduct'; units{14} = 'RPM*W';
+i = 14;
+figure; % Create a new figure
+plot(Data2024.Time, Data2024.(fieldnames{i}),".");
+title(fieldnames{i}); % Set title as column name
+xlabel('Time [s]'); % X-axis label
+
+% Concatenate field name with unit and set it as Y-axis label
+ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
+Data2024.Efficiency = Data2024.Power.*(Data2024.Rot_Speed).^2./(Data2024.lambda.*Data2024.IntakePressure);
+fieldnames{15}='Efficiency'; units{15} = '-';
+i = 15;
+figure; % Create a new figure
+plot(Data2024.Time, Data2024.(fieldnames{i}),".");
+title(fieldnames{i}); % Set title as column name
+xlabel('Time [s]'); % X-axis label
+
+% Concatenate field name with unit and set it as Y-axis label
+ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
+Data2024.LoadConstant = Data2024.Power.*Data2024.Rot_Speed.^3;
+fieldnames{16}='LoadConstant'; units{16} = '-';
+i = 16;
+figure; % Create a new figure
+plot(Data2024.Time, Data2024.(fieldnames{i}),".");
+title(fieldnames{i}); % Set title as column name
+xlabel('Time [s]'); % X-axis label
+
+% Concatenate field name with unit and set it as Y-axis label
+ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
+clearvars i
 % Functions
 % Για την επιλογή των *thresholds*:
 
