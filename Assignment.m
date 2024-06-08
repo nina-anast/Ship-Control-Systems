@@ -306,14 +306,7 @@ validating = load('separated_data\validating_data.mat');
 validating = struct2table(validating.validating)
 % Correlation Matrix
 
-% Convert the table to a matrix
-dataMatrix = table2array(filtered_data);
-correlationMatrix = corr(dataMatrix);
-figure;
-
-% Plot correlation matrix
-corrplot(dataMatrix, 'varNames', filtered_data.Properties.VariableNames);
-clearvars correlationMatrix dataMatrix
+Corrcolormap(Data2024,fieldnames)
 % *Κανονικοποίηση Δεδομένων:*
 
 i = 5;
@@ -343,20 +336,20 @@ clearvars i fieldname
 % Ερώτημα 4: Εκπαίδευση Νευρωνικού
 % Πρώτα πρέπει να μετατρέψουμε τα δεδομένα μας σε matrices
 
-% Convert Time, RotSpeed and lambda's test, train and validation sets from tables to matrices
-input1_train = table2array([normalizedTraining(:,1) normalizedTraining(:,4) normalizedTraining(:,8)]);
-input1_val = table2array([normalizedValidating(:,1) normalizedValidating(:,4) normalizedValidating(:,8)]);
-input1_test = table2array([normalizedTesting(:,1) normalizedTesting(:,4) normalizedTesting(:,8)]);
+% Convert Engine Torque's test, train and validation sets from tables to matrices
+input1_train = table2array(normalizedTraining(:,9));
+input1_val = table2array(normalizedValidating(:,9));
+input1_test = table2array(normalizedTesting(:,9));
 
 % Convert NOx's test, train and validation sets from tables to matrices
 NOx_train = table2array(normalizedTraining(:,2));
 NOx_val =  table2array(normalizedValidating(:,2));
 NOx_test = table2array(normalizedTesting(:,2));
 
-% Convert Time,lambda,ExhaustGasMassflow and Intake Prssure's test, train and validation sets from tables to matrices
-input2_train = table2array([normalizedTraining(:,1) normalizedTraining(:,4) normalizedTraining(:,5) normalizedTraining(:,6)]);
-input2_val = table2array([normalizedValidating(:,1) normalizedValidating(:,4) normalizedValidating(:,5) normalizedValidating(:,6)]);
-input2_test = table2array([normalizedTesting(:,1) normalizedTesting(:,4) normalizedTesting(:,5) normalizedTesting(:,6)]);
+% Convert Intake Prssure's test, train and validation sets from tables to matrices
+input2_train = table2array(normalizedTraining(:,6));
+input2_val = table2array(normalizedValidating(:,6));
+input2_test = table2array(normalizedTesting(:,6));
 
 % Convert Fuel Consumption's test, train and validation sets from tables to matrices
 Fuel_Consumption_train = table2array(normalizedTraining(:,2));
@@ -365,31 +358,25 @@ Fuel_Consumption_test = table2array(normalizedTesting(:,2));
 %%
 % Input NOx network's architecture as recommended
 layers1 = [
-    featureInputLayer(3)
-    fullyConnectedLayer(100)
-    reluLayer
-    fullyConnectedLayer(1)
-    regressionLayer];
-
-% Input NOx network's architecture as recommended
-layers2 = [
-    featureInputLayer(4)
-    fullyConnectedLayer(100)
+    featureInputLayer(1)
+    fullyConnectedLayer(50)
     reluLayer
     fullyConnectedLayer(1)
     regressionLayer];
 
 % Open DeepNetworkDesigner App
-deepNetworkDesigner
+% deepNetworkDesigner
 
 % Define training options 
 options1 = trainingOptions('adam',...
     'Shuffle','every-epoch',...
     'MiniBatchSize',1000, ...
     'MaxEpochs',10, ...
-    'InitialLearnRate',1e-3, ...
+    'InitialLearnRate',3*1e-4, ...
     'ValidationData',{input1_val, NOx_val},...
     'Plots','training-progress', ...
+    'ValidationFrequency',20,...
+    'ValidationPatience',1,...
     'Verbose',false);
 
 
@@ -398,14 +385,22 @@ NOx_net = trainNetwork(input1_train,NOx_train,layers1,options1);
 % Ερώτημα 5: Αποτελέσματα
 
 % Plot NOx emissions prediction using lambda's training, validation and test sets 
-pred_and_plot2(input1_test,NOx_test,NOx_net,1,2,fieldnames,units,centerValueTesting,scaleValueTesting)
+pred_and_plot2(normalizedTesting,NOx_net,1,2,9,fieldnames,units,centerValueTraining,scaleValueTraining)
 %%
+% Input Fuel Consumption network's architecture as recommended
+layers2 = [
+    featureInputLayer(1)
+    fullyConnectedLayer(20)
+    reluLayer
+    fullyConnectedLayer(1)
+    regressionLayer];
+
 % Define training options 
 options2 = trainingOptions('adam',...
     'Shuffle','every-epoch',...
     'MiniBatchSize',1000, ...
     'MaxEpochs',10, ...
-    'InitialLearnRate',1e-3, ...
+    'InitialLearnRate',3*1e-4, ...
     'ValidationData',{input2_val, Fuel_Consumption_val},...
     'Plots','training-progress', ...
     'Verbose',false);
@@ -419,7 +414,7 @@ pred_and_plot2(input2_test,Fuel_Consumption_test,Fuel_Consumption_net,1,3,fieldn
 % Αρχικά, αντιστρέφουμε τον λόγο αέρα καυσίμου.
 
 Data2024.lamda_reversed = 1./Data2024.lambda
-fieldnames{12}='lamda_reversed'; units{12} = '-';
+fieldnames{12}='lamda_reversed'; units{12} = '[-]';
 i = 12;
 figure; % Create a new figure
 plot(Data2024.Time, Data2024.(fieldnames{i}),".");
@@ -430,19 +425,9 @@ xlabel('Time [s]'); % X-axis label
 ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
 %% 
 % Βλέπουμε ότι τα δεδομένα δεν χρειάζονται κάποιο φίλτρο πια.
-% 
-% NEW PARAMETERS:
-% 
-% *Power = Torque * RotSpeed / 60*
-% 
-% Thermal Efficiency = Power/(FOC*Calorific Value)
-% 
-% Air-Fuel Ratio: Intake Air Mass Flow/(λ*Fuel Consumption)
-% 
-% 
 
-Data2024.Power = Data2024.EngineTorque.*Data2024.Rot_Speed;
-fieldnames{13}='Power'; units{13} = 'W';
+Data2024.Power = Data2024.EngineTorque.*Data2024.Rot_Speed / (60*1000);
+fieldnames{13}='Power'; units{13} = '[kW]';
 i = 13;
 figure; % Create a new figure
 plot(Data2024.Time, Data2024.(fieldnames{i}),".");
@@ -451,8 +436,10 @@ xlabel('Time [s]'); % X-axis label
 
 % Concatenate field name with unit and set it as Y-axis label
 ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
-Data2024.SFC = Data2024.FuelConsumption./Data2024.Power;
-fieldnames{14}='SFC'; units{14} = 'kg/kWh';
+cp = 1.05;
+Air_Temperature = 45;
+Data2024.ExhaustGasEnergy = Data2024.ExhaustGasMassFlow*cp.*(Data2024.ExhaustGasTemperature-Air_Temperature) / 1000;
+fieldnames{14}='ExhaustGasEnergy'; units{14} = '[kW]';
 i = 14;
 figure; % Create a new figure
 plot(Data2024.Time, Data2024.(fieldnames{i}),".");
@@ -461,42 +448,7 @@ xlabel('Time [s]'); % X-axis label
 
 % Concatenate field name with unit and set it as Y-axis label
 ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
-%% 
-% Βλέπουμε ότι η ειδική κατανάλωση καυσίμου δεν έχει καλή συμπεριφορά, οπότε 
-% δεν θα την προσμετρήσουμε τελικά στις μεταβλητές μας και θα την αντικαταστήσουμε.
-
-Data2024 = removevars( Data2024 , 'SFC' );
-Data2024.LoadSpeedProduct = Data2024.Rot_Speed.*Data2024.Power;
-fieldnames{14}='LoadSpeedProduct'; units{14} = 'RPM*W';
-i = 14;
-figure; % Create a new figure
-plot(Data2024.Time, Data2024.(fieldnames{i}),".");
-title(fieldnames{i}); % Set title as column name
-xlabel('Time [s]'); % X-axis label
-
-% Concatenate field name with unit and set it as Y-axis label
-ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
-Data2024.Efficiency = Data2024.Power.*(Data2024.Rot_Speed).^2./(Data2024.lambda.*Data2024.IntakePressure);
-fieldnames{15}='Efficiency'; units{15} = '-';
-i = 15;
-figure; % Create a new figure
-plot(Data2024.Time, Data2024.(fieldnames{i}),".");
-title(fieldnames{i}); % Set title as column name
-xlabel('Time [s]'); % X-axis label
-
-% Concatenate field name with unit and set it as Y-axis label
-ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
-Data2024.LoadConstant = Data2024.Power.*Data2024.Rot_Speed.^3;
-fieldnames{16}='LoadConstant'; units{16} = '-';
-i = 16;
-figure; % Create a new figure
-plot(Data2024.Time, Data2024.(fieldnames{i}),".");
-title(fieldnames{i}); % Set title as column name
-xlabel('Time [s]'); % X-axis label
-
-% Concatenate field name with unit and set it as Y-axis label
-ylabel(sprintf('%s %s', fieldnames{i}, units{i}));
-clearvars i
+clearvars i cp Air_Temperature
 % Functions
 % Για την επιλογή των *thresholds*:
 
@@ -732,17 +684,19 @@ end
 %% 
 % 
 
-function [] = pred_and_plot2(x,y,net,i,j,fieldnames,units,center,scale)
-    preds = predict(net,x);
+function [] = pred_and_plot2(normalizedTesting,net,i,j,k,fieldnames,units,centerValueTraining,scaleValueTraining)
+    x = table2array(normalizedTesting(:,i));
+    y = table2array(normalizedTesting(:,j));
+    z = table2array(normalizedTesting(:,k));
+    preds = predict(net,z);
     figure
-    x = x(:,i);
-    x = x*scale{:,i}+center{:,i};
-    y = y*scale{:,j}+center{:,j};
-    preds = preds*scale{:,j}+center{:,j};
-    scatter(x,y,'r')
+    x = x*scaleValueTraining{:,i}+centerValueTraining{:,i};
+    y = y*scaleValueTraining{:,j}+centerValueTraining{:,j};
+    preds = preds*scaleValueTraining{:,j}+centerValueTraining{:,j};
+    scatter(x,y,'r.')
     hold on
     hold on
-    scatter(x,preds,'g')
+    scatter(x,preds,'g.')
     title('Test vs Net prediction')
     ylabel(sprintf('%s %s', fieldnames{j},units{j}));
     xlabel(sprintf('%s %s', fieldnames{i},units{j}));
